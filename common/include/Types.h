@@ -1,5 +1,6 @@
 /**
- * Copyright (c) 2012, Thibault Signor <tibsou@gmail.com>
+ * Copyright (c) 2018, Thibault Signor         <tibsou@gmail.com>
+ *                     Julien 'Blaxar' Bardagi <blaxar.waldarax@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,52 +24,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CONNECTION_H
-#define CONNECTION_H
+#ifndef TYPES_H
+#define TYPES_H
 
-#include "User.h"
+#include <string>
 
-#include <QtNetwork>
-#include "Types.h"
+typedef std::string NetPayload;
 
-#define HEARTBEAT_RATE 60000
-
-class Connection : public QObject {
-  Q_OBJECT
- public:
-  Connection();
-  QTcpSocket *getSocket();
-  QString getMessage();
-  quint16 getMessageType();
-  QMap<quint16, User *> *getUsers();
-  quint16 getIdByNick(QString);
-  void clearUserlist();
-  void sendPacket(const QByteArray&);
-
- public slots:
-  void dataRecv();
-  void dataSend(quint16, NetPayload = "");
-  void dataSend(NetPayload);
-  void positionSend(float, float, float, float, float);
-  void dataHandler(quint16, QString);
-  void socketError(QAbstractSocket::SocketError);
-  void displayData(QString, quint16 = 0);
-  void sendHeartbeat();
-
- signals:
-  void messageChanged();
-  void listChanged();
-  void userCreated(User *);
-  void userDeleted(User *);
-  void userPosition(User *);
-
- private:
-  QMap<quint16, User *> *users;
-  QTcpSocket *socket;  // server
-  quint16 messageSize;
-  QTimer *heartbeat;
-  QString *message;
-  quint16 messageType;
-};
-
-#endif  // CONNECTION_H
+#endif // TYPES_H

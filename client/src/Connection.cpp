@@ -25,6 +25,8 @@
 
 #include "Connection.h"
 #include "Protocol.h"
+#include "Packets.h"
+#include <iostream>
 
 typedef struct {
 
@@ -57,45 +59,54 @@ void Connection::sendPacket(const QByteArray &packet) {
   }
 }
 
-void Connection::dataSend(quint16 msgCode, QString msgToSend) {
+void Connection::dataSend(quint16 msgCode, NetPayload netData) {
   QByteArray packet;
-  QDataStream out(&packet, QIODevice::WriteOnly);
+  void* data_handler;
 
-  out << static_cast<quint16>(0);
-  out << static_cast<quint16>(msgCode);
-  out << msgToSend;
-  out.device()->seek(0);
-  out << static_cast<quint16>(packet.size() - sizeof(quint16));
+  NetMsg out(0, msgCode, netData);
+  msgpack::pack(packet, out, &data_handler);
 
+  sendPacket(packet);
+  free(data_handler);
+}
+
+void Connection::dataSend(NetPayload netData) {
+  QByteArray packet;
+  packet.setRawData(netData.data(), netData.size());
+
+  msgpack::object_handle oh = msgpack::unpack(packet.data(), packet.size());
+  msgpack::object obj = oh.get();
+  
   sendPacket(packet);
 }
 
 void Connection::sendHeartbeat() {
   QByteArray packet;
-  QDataStream out(&packet, QIODevice::WriteOnly);
+  //QDataStream out(&packet, QIODevice::WriteOnly);
+  void* data_handler;
 
-  out << static_cast<quint16>(0);
-  out << static_cast<quint16>(CS_HEARTBEAT);
-  out.device()->seek(0);
-  out << static_cast<quint16>(packet.size() - sizeof(quint16));
-
+  std::cout << "sending heartbeat: " << CS_HEARTBEAT << std::endl;
+  NetMsg out(0, CS_HEARTBEAT);
+  msgpack::pack(packet, out, &data_handler);
   sendPacket(packet);
+  free(data_handler);
 }
 
 void Connection::positionSend(float x, float y, float z, float pitch,
                               float yaw) {
   QByteArray packet;
-  QDataStream out(&packet, QIODevice::WriteOnly);
+  std::stringstream buffer;
+  void* data_handler;
 
   _User bu = {x, y, z, pitch, yaw};
 
-  out << static_cast<quint16>(0);
-  out << static_cast<quint16>(CS_AVATAR_POSITION);
-  msgpack::pack(out, bu);
-  out.device()->seek(0);
-  out << static_cast<quint16>(packet.size() - sizeof(quint16));
+  msgpack::pack(buffer, bu);
+  buffer.seekg(0);
 
+  NetMsg out(0, CS_AVATAR_POSITION, buffer.str());
+  msgpack::pack(packet, out, &data_handler);
   sendPacket(packet);
+  free(data_handler);
 }
 
 void Connection::dataRecv() {

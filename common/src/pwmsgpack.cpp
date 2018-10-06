@@ -35,3 +35,28 @@ msgpack::object_handle msgpack::unpack(QDataStream* s, std::size_t len) {
 msgpack::object_handle msgpack::unpack(QDataStream& s, std::size_t len) {
   return msgpack::unpack(&s, len);
 }
+
+msgpack::object_handle msgpack::unpack(QByteArray* b, std::size_t len) {
+  msgpack::object_handle oh = unpack(b->data(), len);
+  return oh;
+}
+
+msgpack::object_handle msgpack::unpack(QByteArray& b, std::size_t len) {
+  return msgpack::unpack(&b, len);
+}
+
+msgpack::object_handle msgpack::unpack(QChar* s, std::size_t len) {
+  return msgpack::unpack((char*) s, len);
+}
+
+static bool is_equal(const QString &qs, const std::string &stds) {
+  return stds == qs.toStdString();
+}
+
+bool operator == (const QString &qs, const std::string &stds) {
+  return is_equal(qs, stds);
+}
+
+bool operator == (const std::string &stds, const QString &qs) {
+  return is_equal(qs, stds);
+}

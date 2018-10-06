@@ -28,6 +28,7 @@
 
 #include <QtNetwork>
 #include <pwmsgpack.h>
+#include <Types.h>
 
 #define CONNECTION_TIMEOUT 120000
 
@@ -50,7 +51,7 @@ class Client : public QObject {
   quint16 getId();
 
  private slots:
-  void dataHandler(quint16 dataCode, QString data);
+  void dataHandler(quint16 & dataCode, NetPayload & data);
   void dataRecv();
   void clientDisconnect();
 
@@ -65,6 +66,7 @@ class Client : public QObject {
   static QMap<quint16, Client *> clients;
   float x, y, z;
   float pitch, yaw;
+  msgpack::unpacker unpacker;
 
   MSGPACK_DEFINE_MAP(x, y, z, pitch, yaw);
   ENABLE_MSGPACK(Client);

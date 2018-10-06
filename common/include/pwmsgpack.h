@@ -32,28 +32,59 @@
 
 #define ENABLE_MSGPACK(T) friend struct msgpack::v1::adaptor::convert<T, void>
 
-typedef msgpack::type::tuple<uint16_t, msgpack::type::raw_ref> NetMsg;
+template <typename T>
+void print_any_buffer(T& buffer) {
+  int count = 0;
+  for(uchar val : buffer) {
+    printf("%02x ", val);
+    count++;
+  }
+  printf(" (%d)\n", count);
+}
 
 namespace msgpack {
 
   template <typename T>
-  size_t pack(QDataStream* s, const T& v) {
+  void pack(QDataStream* s, const T& v) {
     std::stringstream buffer;
     msgpack::pack(buffer, v);
     buffer.seekg(0);
-    std::string str = buffer.str();
-    return s->writeRawData(str.data(), str.size());
+    const std::string str = buffer.str();
+    s->writeRawData(str.data(), str.size());
   }
 
   template <typename T>
-  size_t pack(QDataStream& s, const T& v) {
-    return pack(&s, v);
+  void pack(QDataStream& s, const T& v) {
+    pack(&s, v);
+  }
+
+  template <typename T>
+  size_t pack(QByteArray* b, const T& v, void** data_handler) {
+    std::stringstream buffer;
+    msgpack::pack(buffer, v);
+    buffer.seekg(0);
+    const std::string str = buffer.str();
+    *data_handler = malloc(str.size());
+    memcpy(*data_handler, str.data(), str.size());
+    b->setRawData((char*) *data_handler, str.size());
+    return str.size();
+  }
+
+  template <typename T>
+  size_t pack(QByteArray& b, const T& v, void** data_handler) {
+    return pack(&b, v, data_handler);
   }
 
   object_handle unpack(QDataStream* s, std::size_t len);
   object_handle unpack(QDataStream& s, std::size_t len);
+  object_handle unpack(QByteArray* b, std::size_t len);
+  object_handle unpack(QByteArray& b, std::size_t len);
+  object_handle unpack(QChar* s,       std::size_t len);
 
 }
+
+bool operator == (const QString &qs, const std::string &stds);
+bool operator == (const std::string &stds, const QString &qs);
 
 typedef struct _BaseUser {
 

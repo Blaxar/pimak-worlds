@@ -25,8 +25,9 @@
 
 #include "MainWindow.h"
 #include "OgreWindow.h"
-#include "Protocol.h"
+#include "Packets.h"
 #include "ui_MainWindow.h"
+#include <iostream>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
@@ -120,7 +121,7 @@ void MainWindow::on_actThirdCam_toggled(bool checked) {
 void MainWindow::on_message_returnPressed() {
   appendMessage(settings->getNickname() + ": " + ui->message->text(),
                 SC_MSG_PUBLIC);
-  connection->dataSend(CS_MSG_PUBLIC, ui->message->text());
+  connection->dataSend(NetMsg::make_pl<PlCsMsgPublic>(ui->message->text()));
   ui->message->clear();
   ui->message->setFocus();
 }
@@ -129,10 +130,9 @@ void MainWindow::on_whisper_returnPressed() {
   appendMessage("(" + tr("to: ") + ui->whisperSelector->currentText() + ") " +
                     ui->whisper->text(),
                 SC_MSG_PRIVATE);
-  connection->dataSend(CS_MSG_PRIVATE,
-                       QString::number(connection->getIdByNick(
-                           ui->whisperSelector->currentText())) +
-                           ":" + ui->whisper->text());
+  connection->dataSend(NetMsg::make_pl<PlCsMsgPrivate>(
+                         connection->getIdByNick(ui->whisperSelector->currentText()),
+                         ui->whisper->text()));
   ui->whisper->clear();
   ui->whisper->setFocus();
   ogreWindow->createAvatar(connection->getUsers()->value(
@@ -152,7 +152,7 @@ void MainWindow::on_actDisconnect_triggered() {
 }
 
 void MainWindow::clientConnect() {
-  connection->dataSend(CS_AUTH, settings->getNickname());
+  connection->dataSend(NetMsg::make_pl<PlCsAuth>(settings->getNickname()));
   appendMessage(tr("Connection successful"));
   ui->actConnect->setEnabled(false);
   ui->actDisconnect->setEnabled(true);
